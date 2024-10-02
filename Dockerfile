@@ -2,35 +2,66 @@
 # This is just a snapshot of buildpack-deps:buster that was last updated on 2019-12-28.
 FROM judge0/buildpack-deps:buster-2019-12-28
 
+# Check for latest version here: https://www.python.org/downloads
+# ENV PYTHON_VERSIONS \
+#       3.8.1 \
+#       2.7.17
+# RUN set -xe && \
+#     for VERSION in $PYTHON_VERSIONS; do \
+#       curl -fSsL "https://www.python.org/ftp/python/$VERSION/Python-$VERSION.tar.xz" -o /tmp/python-$VERSION.tar.xz && \
+#       mkdir /tmp/python-$VERSION && \
+#       tar -xf /tmp/python-$VERSION.tar.xz -C /tmp/python-$VERSION --strip-components=1 && \
+#       rm /tmp/python-$VERSION.tar.xz && \
+#       cd /tmp/python-$VERSION && \
+#       ./configure \
+#         --prefix=/usr/local/python-$VERSION && \
+#       make -j$(nproc) && \
+#       make -j$(nproc) install && \
+#       rm -rf /tmp/*; \
+#     done
+
+# Install packages
+RUN apt-get update && \
+    apt-get install -y python3-pip && \
+    pip3 install \
+        numpy && \
+    rm -rf /var/lib/apt/lists/
+
 # Check for latest version here: https://gcc.gnu.org/releases.html, https://ftpmirror.gnu.org/gcc
-ENV GCC_VERSIONS \
-      7.4.0 \
-      8.3.0 \
-      9.2.0
-RUN set -xe && \
-    for VERSION in $GCC_VERSIONS; do \
-      curl -fSsL "https://ftpmirror.gnu.org/gcc/gcc-$VERSION/gcc-$VERSION.tar.gz" -o /tmp/gcc-$VERSION.tar.gz && \
-      mkdir /tmp/gcc-$VERSION && \
-      tar -xf /tmp/gcc-$VERSION.tar.gz -C /tmp/gcc-$VERSION --strip-components=1 && \
-      rm /tmp/gcc-$VERSION.tar.gz && \
-      cd /tmp/gcc-$VERSION && \
-      ./contrib/download_prerequisites && \
-      { rm *.tar.* || true; } && \
-      tmpdir="$(mktemp -d)" && \
-      cd "$tmpdir"; \
-      if [ $VERSION = "9.2.0" ]; then \
-        ENABLE_FORTRAN=",fortran"; \
-      else \
-        ENABLE_FORTRAN=""; \
-      fi; \
-      /tmp/gcc-$VERSION/configure \
-        --disable-multilib \
-        --enable-languages=c,c++$ENABLE_FORTRAN \
-        --prefix=/usr/local/gcc-$VERSION && \
-      make -j$(nproc) && \
-      make -j$(nproc) install-strip && \
-      rm -rf /tmp/*; \
-    done
+# ENV GCC_VERSIONS \
+#       7.4.0 \
+#       8.3.0 \
+#       9.2.0
+# RUN set -xe && \
+#     for VERSION in $GCC_VERSIONS; do \
+#       curl -fSsL "https://ftpmirror.gnu.org/gcc/gcc-$VERSION/gcc-$VERSION.tar.gz" -o /tmp/gcc-$VERSION.tar.gz && \
+#       mkdir /tmp/gcc-$VERSION && \
+#       tar -xf /tmp/gcc-$VERSION.tar.gz -C /tmp/gcc-$VERSION --strip-components=1 && \
+#       rm /tmp/gcc-$VERSION.tar.gz && \
+#       cd /tmp/gcc-$VERSION && \
+#       ./contrib/download_prerequisites && \
+#       { rm *.tar.* || true; } && \
+#       tmpdir="$(mktemp -d)" && \
+#       cd "$tmpdir"; \
+#       if [ $VERSION = "9.2.0" ]; then \
+#         ENABLE_FORTRAN=",fortran"; \
+#       else \
+#         ENABLE_FORTRAN=""; \
+#       fi; \
+#       /tmp/gcc-$VERSION/configure \
+#         --disable-checking \
+#         --disable-multilib \
+#         --enable-languages=c,c++$ENABLE_FORTRAN \
+#         --prefix=/usr/local/gcc-$VERSION && \
+#       make -j$(nproc) && \
+#       make -j$(nproc) install-strip && \
+#       rm -rf /tmp/*; \
+#     done
+
+# gcc via apt
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends build-essential && \
+    rm -rf /var/lib/apt/lists/*
 
 # Check for latest version here: https://www.ruby-lang.org/en/downloads
 ENV RUBY_VERSIONS \
@@ -50,27 +81,9 @@ RUN set -xe && \
       rm -rf /tmp/*; \
     done
 
-# Check for latest version here: https://www.python.org/downloads
-ENV PYTHON_VERSIONS \
-      3.8.1 \
-      2.7.17
-RUN set -xe && \
-    for VERSION in $PYTHON_VERSIONS; do \
-      curl -fSsL "https://www.python.org/ftp/python/$VERSION/Python-$VERSION.tar.xz" -o /tmp/python-$VERSION.tar.xz && \
-      mkdir /tmp/python-$VERSION && \
-      tar -xf /tmp/python-$VERSION.tar.xz -C /tmp/python-$VERSION --strip-components=1 && \
-      rm /tmp/python-$VERSION.tar.xz && \
-      cd /tmp/python-$VERSION && \
-      ./configure \
-        --prefix=/usr/local/python-$VERSION && \
-      make -j$(nproc) && \
-      make -j$(nproc) install && \
-      rm -rf /tmp/*; \
-    done
-
 # Check for latest version here: https://ftp.gnu.org/gnu/octave
 ENV OCTAVE_VERSIONS \
-      5.1.0
+      9.2.0
 RUN set -xe && \
     apt-get update && \
     apt-get install -y --no-install-recommends gfortran libblas-dev liblapack-dev libpcre3-dev && \
@@ -100,7 +113,7 @@ RUN set -xe && \
 
 # Check for latest version here: https://ftpmirror.gnu.org/bash
 ENV BASH_VERSIONS \
-      5.0
+      5.2
 RUN set -xe && \
     for VERSION in $BASH_VERSIONS; do \
       curl -fSsL "https://ftpmirror.gnu.org/bash/bash-$VERSION.tar.gz" -o /tmp/bash-$VERSION.tar.gz && \
@@ -116,18 +129,18 @@ RUN set -xe && \
     done
 
 # Check for latest version here: https://www.freepascal.org/download.html
-ENV FPC_VERSIONS \
-      3.0.4
-RUN set -xe && \
-    for VERSION in $FPC_VERSIONS; do \
-      curl -fSsL "ftp://ftp.freepascal.org/fpc/dist/$VERSION/x86_64-linux/fpc-$VERSION.x86_64-linux.tar" -o /tmp/fpc-$VERSION.tar && \
-      mkdir /tmp/fpc-$VERSION && \
-      tar -xf /tmp/fpc-$VERSION.tar -C /tmp/fpc-$VERSION --strip-components=1 && \
-      rm /tmp/fpc-$VERSION.tar && \
-      cd /tmp/fpc-$VERSION && \
-      echo "/usr/local/fpc-$VERSION" | sh install.sh && \
-      rm -rf /tmp/*; \
-    done
+# ENV FPC_VERSIONS \
+#       3.2.2
+# RUN set -xe && \
+#     for VERSION in $FPC_VERSIONS; do \
+#       curl -fSsL "ftp://ftp.freepascal.org/fpc/dist/$VERSION/x86_64-linux/fpc-$VERSION.x86_64-linux.tar" -o /tmp/fpc-$VERSION.tar && \
+#       mkdir /tmp/fpc-$VERSION && \
+#       tar -xf /tmp/fpc-$VERSION.tar -C /tmp/fpc-$VERSION --strip-components=1 && \
+#       rm /tmp/fpc-$VERSION.tar && \
+#       cd /tmp/fpc-$VERSION && \
+#       echo "/usr/local/fpc-$VERSION" | sh install.sh && \
+#       rm -rf /tmp/*; \
+#     done
 
 # Check for latest version here: https://www.haskell.org/ghc/download.html
 ENV HASKELL_VERSIONS \
@@ -149,24 +162,24 @@ RUN set -xe && \
     done
 
 # Check for latest version here: https://www.mono-project.com/download/stable
-ENV MONO_VERSIONS \
-      6.6.0.161
-RUN set -xe && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends cmake && \
-    rm -rf /var/lib/apt/lists/* && \
-    for VERSION in $MONO_VERSIONS; do \
-      curl -fSsL "https://download.mono-project.com/sources/mono/mono-$VERSION.tar.xz" -o /tmp/mono-$VERSION.tar.xz && \
-      mkdir /tmp/mono-$VERSION && \
-      tar -xf /tmp/mono-$VERSION.tar.xz -C /tmp/mono-$VERSION --strip-components=1 && \
-      rm /tmp/mono-$VERSION.tar.xz && \
-      cd /tmp/mono-$VERSION && \
-      ./configure \
-        --prefix=/usr/local/mono-$VERSION && \
-      make -j$(nproc) && \
-      make -j$(proc) install && \
-      rm -rf /tmp/*; \
-    done
+# ENV MONO_VERSIONS \x
+#       6.6.0.161
+# RUN set -xe && \
+#     apt-get update && \
+#     apt-get install -y --no-install-recommends cmake && \
+#     rm -rf /var/lib/apt/lists/* && \
+#     for VERSION in $MONO_VERSIONS; do \
+#       curl -fSsL "https://download.mono-project.com/sources/mono/mono-$VERSION.tar.xz" -o /tmp/mono-$VERSION.tar.xz && \
+#       mkdir /tmp/mono-$VERSION && \
+#       tar -xf /tmp/mono-$VERSION.tar.xz -C /tmp/mono-$VERSION --strip-components=1 && \
+#       rm /tmp/mono-$VERSION.tar.xz && \
+#       cd /tmp/mono-$VERSION && \
+#       ./configure \
+#         --prefix=/usr/local/mono-$VERSION && \
+#       make -j$(nproc) && \
+#       make -j$(proc) install && \
+#       rm -rf /tmp/*; \
+#     done
 
 # Check for latest version here: https://nodejs.org/en
 ENV NODE_VERSIONS \
@@ -248,15 +261,15 @@ RUN set -xe && \
     done
 
 # Check for latest version here: https://sourceforge.net/projects/fbc/files/Binaries%20-%20Linux
-ENV FBC_VERSIONS \
-      1.07.1
-RUN set -xe && \
-    for VERSION in $FBC_VERSIONS; do \
-      curl -fSsL "https://downloads.sourceforge.net/project/fbc/Binaries%20-%20Linux/FreeBASIC-$VERSION-linux-x86_64.tar.gz" -o /tmp/fbc-$VERSION.tar.gz && \
-      mkdir /usr/local/fbc-$VERSION && \
-      tar -xf /tmp/fbc-$VERSION.tar.gz -C /usr/local/fbc-$VERSION --strip-components=1 && \
-      rm -rf /tmp/*; \
-    done
+# ENV FBC_VERSIONS \
+#       1.10.1
+# RUN set -xe && \
+#     for VERSION in $FBC_VERSIONS; do \
+#       curl -fSsL "https://downloads.sourceforge.net/project/fbc/Binaries%20-%20Linux/FreeBASIC-$VERSION-linux-x86_64.tar.gz" -o /tmp/fbc-$VERSION.tar.gz && \
+#       mkdir /usr/local/fbc-$VERSION && \
+#       tar -xf /tmp/fbc-$VERSION.tar.gz -C /usr/local/fbc-$VERSION --strip-components=1 && \
+#       rm -rf /tmp/*; \
+#     done
 
 # Check for latest version here: https://github.com/ocaml/ocaml/releases
 ENV OCAML_VERSIONS \
@@ -355,7 +368,7 @@ RUN set -xe && \
 
 # Check for latest version here: http://gprolog.org/#download
 ENV GPROLOG_VERSIONS \
-      1.4.5
+      1.5.0
 RUN set -xe && \
     for VERSION in $GPROLOG_VERSIONS; do \
       curl -fSsL "http://gprolog.org/gprolog-$VERSION.tar.gz" -o /tmp/gprolog-$VERSION.tar.gz && \
@@ -372,7 +385,7 @@ RUN set -xe && \
 
 # Check for latest version here: http://www.sbcl.org/platform-table.html
 ENV SBCL_VERSIONS \
-      2.0.0
+      2.4.9
 RUN set -xe && \
     apt-get update && \
     apt-get install -y --no-install-recommends bison re2c && \
@@ -389,7 +402,7 @@ RUN set -xe && \
 
 # Check for latest version here: https://ftp.gnu.org/gnu/gnucobol
 ENV COBOL_VERSIONS \
-      2.2
+      3.2
 RUN set -xe && \
     for VERSION in $COBOL_VERSIONS; do \
       curl -fSsL "https://ftp.gnu.org/gnu/gnucobol/gnucobol-$VERSION.tar.xz" -o /tmp/gnucobol-$VERSION.tar.xz && \
@@ -406,7 +419,7 @@ RUN set -xe && \
 
 # Check for latest version here: https://swift.org/download
 ENV SWIFT_VERSIONS \
-      5.2.3
+      5.10.1
 RUN set -xe && \
     apt-get update && \
     apt-get install -y --no-install-recommends libncurses5 && \
@@ -420,7 +433,7 @@ RUN set -xe && \
 
 # Check for latest version here: https://kotlinlang.org
 ENV KOTLIN_VERSIONS \
-      1.3.70
+      2.0.20
 RUN set -xe && \
     for VERSION in $KOTLIN_VERSIONS; do \
       curl -fSsL "https://github.com/JetBrains/kotlin/releases/download/v$VERSION/kotlin-compiler-$VERSION.zip" -o /tmp/kotlin-$VERSION.zip && \
@@ -434,22 +447,22 @@ RUN set -xe && \
 # I currently use this to add support for Visual Basic.Net but this can be also
 # used to support C# language which has been already supported but with manual
 # installation of Mono (see above).
-ENV MONO_VERSION 6.6.0.161
-RUN set -xe && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends gnupg dirmngr && \
-    rm -rf /var/lib/apt/lists/* && \
-    export GNUPGHOME="$(mktemp -d)" && \
-    gpg --batch --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF && \
-    gpg --batch --export --armor 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF > /etc/apt/trusted.gpg.d/mono.gpg.asc && \
-    gpgconf --kill all && \
-    rm -rf "$GNUPGHOME" && \
-    apt-key list | grep Xamarin && \
-    apt-get purge -y --auto-remove gnupg dirmngr && \
-    echo "deb http://download.mono-project.com/repo/debian stable-stretch/snapshots/$MONO_VERSION main" > /etc/apt/sources.list.d/mono-official-stable.list && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends mono-vbnc && \
-    rm -rf /var/lib/apt/lists/* /tmp/*
+# ENV MONO_VERSION 6.6.0.161
+# RUN set -xe && \
+#     apt-get update && \
+#     apt-get install -y --no-install-recommends gnupg dirmngr && \
+#     rm -rf /var/lib/apt/lists/* && \
+#     export GNUPGHOME="$(mktemp -d)" && \
+#     gpg --batch --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF && \
+#     gpg --batch --export --armor 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF > /etc/apt/trusted.gpg.d/mono.gpg.asc && \
+#     gpgconf --kill all && \
+#     rm -rf "$GNUPGHOME" && \
+#     apt-key list | grep Xamarin && \
+#     apt-get purge -y --auto-remove gnupg dirmngr && \
+#     echo "deb http://download.mono-project.com/repo/debian stable-stretch/snapshots/$MONO_VERSION main" > /etc/apt/sources.list.d/mono-official-stable.list && \
+#     apt-get update && \
+#     apt-get install -y --no-install-recommends mono-vbnc && \
+#     rm -rf /var/lib/apt/lists/* /tmp/*
 
 # Check for latest version here: https://packages.debian.org/buster/clang-7
 # Used for additional compilers for C, C++ and used for Objective-C.
@@ -499,19 +512,19 @@ RUN set -xe && \
 # Support for Perl came "for free" since it is already installed.
 
 # Check for latest version here: https://github.com/clojure/clojure/releases
-ENV CLOJURE_VERSION 1.10.1
-RUN set -xe && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends maven && \
-    cd /tmp && \
-    git clone https://github.com/clojure/clojure && \
-    cd clojure && \
-    git checkout clojure-$CLOJURE_VERSION && \
-    mvn -Plocal -Dmaven.test.skip=true package && \
-    mkdir /usr/local/clojure-$CLOJURE_VERSION && \
-    cp clojure.jar /usr/local/clojure-$CLOJURE_VERSION && \
-    apt-get remove --purge -y maven && \
-    rm -rf /var/lib/apt/lists/* /tmp/*
+# ENV CLOJURE_VERSION 1.12.0
+# RUN set -xe && \
+#     apt-get update && \
+#     apt-get install -y --no-install-recommends maven && \
+#     cd /tmp && \
+#     git clone https://github.com/clojure/clojure && \
+#     cd clojure && \
+#     git checkout clojure-$CLOJURE_VERSION && \
+#     mvn -Plocal -Dmaven.test.skip=true package && \
+#     mkdir /usr/local/clojure-$CLOJURE_VERSION && \
+#     cp clojure.jar /usr/local/clojure-$CLOJURE_VERSION && \
+#     apt-get remove --purge -y maven && \
+#     rm -rf /var/lib/apt/lists/* /tmp/*
 
 # Check for latest version here: https://github.com/dotnet/sdk/releases
 RUN set -xe && \
@@ -521,10 +534,10 @@ RUN set -xe && \
     rm -rf /tmp/*
 
 # Check for latest version here: https://groovy.apache.org/download.html
-RUN set -xe && \
-    curl -fSsL "https://dl.bintray.com/groovy/maven/apache-groovy-binary-3.0.3.zip" -o /tmp/groovy.zip && \
-    unzip /tmp/groovy.zip -d /usr/local && \
-    rm -rf /tmp/*
+# RUN set -xe && \
+#     curl -fSsL "https://dl.bintray.com/groovy/maven/apache-groovy-binary-3.0.3.zip" -o /tmp/groovy.zip && \
+#     unzip /tmp/groovy.zip -d /usr/local && \
+#     rm -rf /tmp/*
 
 RUN set -xe && \
     apt-get update && \
